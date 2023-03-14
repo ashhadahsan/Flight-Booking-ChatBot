@@ -1,0 +1,6 @@
+fastapi
+python-multipart
+fastapi-sessions
+uvicorn
+gTTS
+SpeechRecognition
