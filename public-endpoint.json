@@ -1,4 +1,4 @@
 {
-    "containerName": "uvicorn",
+    "containerName": "ai-backend",
     "containerPort": 80
 }

@@ -153,3 +153,4 @@ cython_debug/
 hello.mp3
 nlu.yml
 stories.yml
+*.wav

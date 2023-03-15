@@ -1,8 +1,8 @@
 {
     "flask": {
-        "image": ":backend-imagegenerator-ai.image-gen.26",
+        "image": ":ai-backend.ai-backend.1",
         "ports": {
-            "5000": "HTTP"
+            "80": "HTTP"
         }
     }
 }

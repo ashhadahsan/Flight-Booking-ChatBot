@@ -27,6 +27,16 @@ app.add_middleware(
 import uuid
 from fastapi import FastAPI, File, UploadFile
 
+import logging
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger = logging.getLogger("uvicorn.access")
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+
 
 @app.post("/create_session/{name}/{location}")
 async def create_session(name: str, location: str, response: Response):
@@ -66,7 +76,10 @@ async def handle_speech(
     bot = load_booking_chatbot()
     name = str(uuid.uuid1())
     aud_file = f"{name}.wav"
-    audio_file = AudioSegment.from_file(audio.filename, format="mp3")
+    audio_file = AudioSegment.from_file_using_temporary_files(
+        audio.filename, format="mp3"
+    )
+    # audio_file = AudioSegment.from_file(audio.filename, format="mp3")
 
     # Convert to WAV format
     audio_file.export(aud_file, format="wav")
@@ -106,6 +119,6 @@ async def handle_speech(
         "metadata": {"city": city, "date": date},
         "audio": encoded_audio,
     }
-    remove(aud_file)
+    await remove(aud_file)
 
     return JSONResponse(content=json_response, media_type="application/json")
