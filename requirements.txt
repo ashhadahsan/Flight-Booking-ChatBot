@@ -4,3 +4,8 @@ fastapi-sessions
 uvicorn
 gTTS
 SpeechRecognition
+click
+spacy
+https://github.com/RaSan147/ChatterBot_update/archive/refs/heads/master.zip
+aiofiles
+pydub

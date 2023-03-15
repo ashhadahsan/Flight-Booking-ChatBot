@@ -1,10 +1,15 @@
 from fastapi_sessions.backends.implementations import InMemoryBackend
 from fastapi_sessions.session_verifier import SessionVerifier
 from fastapi_sessions.frontends.implementations import SessionCookie, CookieParameters
+from pydantic import BaseModel
+from uuid import UUID
+from fastapi_sessions.backends.implementations import InMemoryBackend
+from fastapi import HTTPException
 
 
 class SessionData(BaseModel):
     username: str
+    current_location = str
 
 
 cookie_params = CookieParameters()

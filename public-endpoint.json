@@ -1,0 +1,4 @@
+{
+    "containerName": "uvicorn",
+    "containerPort": 80
+}
