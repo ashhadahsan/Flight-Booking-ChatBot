@@ -1,3 +1,5 @@
+from constants import cities
+
 greetings = [
     "Hello",
     r"Hi user, welcome to infinite possibilities. How can I help you today?",
@@ -47,4 +49,26 @@ greetings = [
     "Not much, how about you?",
     "What's up?",
     "Nothing much.",
+    "Book me a flight",
+    "That's what I am here for",
+    "Book me a flight",
+    "Sure, may I know where are you going?",
+    "I want to book a flight",
+    "Sure, may I know where are you going?",
+    "I want airline tickets please",
+    "Sure, may I know where are you going?",
+    "I want to purchase airline tickets.",
+    "Sure, may I know where are you going?",
+    "I want to purchase airline tickets.",
+    "Where are you traveling to?",
+    "Book me a flight",
+    "Where are you traveling to?",
+    "I am travelling to ..",
+    "Awesome, Should I use your current location as origin?",
+    "I am Booking tickets to ..",
+    "Awesome, Should I use your current location as origin?",
+    "I want to go to ..",
+    "Awesome, Should I use your current location as origin?",
+    "I am travelling to Chicago ..",
+    "Awesome, Should I use your current location as origin?",
 ]

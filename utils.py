@@ -18,3 +18,14 @@ class FlightInfoExtractor:
             "destination_city": destination_city,
             "price": price,
         }
+
+
+import json
+import pandas as pd
+
+
+def get_iata(city: str) -> str:
+    with open("iata.json", "r") as f:
+        iata = json.load(f)
+    df = pd.DataFrame(iata)
+    return df[df["city"] == city.capitalize()]["iata"].values.tolist()[0]
