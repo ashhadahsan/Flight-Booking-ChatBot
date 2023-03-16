@@ -65,6 +65,7 @@ async def del_session(response: Response, session_id: UUID = Depends(cookie)):
 
 
 from pydub import AudioSegment
+import aiofiles
 
 # add mp3 file upload here please
 @app.post("/api/bookingChat")
@@ -76,17 +77,11 @@ async def handle_speech(
     bot = load_booking_chatbot()
     name = str(uuid.uuid1())
     aud_file = f"{name}.wav"
-    audio_file = AudioSegment.from_file_using_temporary_files(
-        audio.filename, format="mp3"
-    )
-    # audio_file = AudioSegment.from_file(audio.filename, format="mp3")
-
-    # Convert to WAV format
+    async with aiofiles.open(audio.filename, "wb") as out_file:
+        content = await audio.read()  # async read
+        await out_file.write(content)  # async write
+    audio_file = AudioSegment.from_file(audio.filename, format="mp3")
     audio_file.export(aud_file, format="wav")
-    # with open(aud_file, "wb") as out_file:
-
-    #     content = await audio.read()  # async read
-    #     out_file.write(content)  # async write
 
     r = sr.Recognizer()
     r.energy_threshold = energy
