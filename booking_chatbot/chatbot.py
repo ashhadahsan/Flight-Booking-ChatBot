@@ -1,10 +1,10 @@
-from training import *
+from .training import *
 
 input_size = 129
 output_size = 16
 hidden_size = 8
 # Create a new chatbot
-from NeuralNet import NeuralNet
+from booking_chatbot.NeuralNet import NeuralNet
 import torch
 import nltk
 import random

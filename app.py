@@ -6,14 +6,14 @@ import speech_recognition as sr
 import io
 from fastapi.responses import JSONResponse
 from gtts import gTTS
-from chatbot import *
-from sessions import *
+from booking_chatbot.chatbot import *
+from user_session.sessions import *
 from constants import *
 from io import BytesIO
 import base64
 from aiofiles.os import remove
 import random
-from training import intents
+from booking_chatbot.training import intents
 
 app = FastAPI()
 
@@ -98,7 +98,9 @@ async def handle_speech(
 
     # Get a response from Chatterbot
 
-    response = get_response(bot, text)
+    response, tag = get_response(bot, text)
+    del bot
+
     print(response)
 
     response = response.replace("user", username)
