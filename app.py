@@ -12,6 +12,8 @@ from constants import *
 from io import BytesIO
 import base64
 from aiofiles.os import remove
+import random
+from training import intents
 
 app = FastAPI()
 
@@ -74,7 +76,7 @@ async def handle_speech(
     username: str = Form(...),
     current_location: str = Form(...),
 ):
-    bot = load_booking_chatbot()
+    bot = load_chatbot()
     name = str(uuid.uuid1())
     aud_file = f"{name}.wav"
     async with aiofiles.open(audio.filename, "wb") as out_file:
@@ -95,25 +97,29 @@ async def handle_speech(
     date = None
 
     # Get a response from Chatterbot
-    response = bot.get_response(text).text
+
+    response = get_response(bot, text)
+    print(response)
+
     response = response.replace("user", username)
-    language = "en-us"
 
-    tts = gTTS(text=response, lang=language, slow=False)
-    name = str(uuid.uuid1())
+    # language = "en-us"
 
-    audio_io = BytesIO()
-    tts.write_to_fp(audio_io)
-    audio_io.seek(0)
-    audio_response = audio_io.read()
+    # tts = gTTS(text=response, lang=language, slow=False)
+    # name = str(uuid.uuid1())
 
-    # Encode the audio response as base64 for transmission in JSON
-    encoded_audio = base64.b64encode(audio_response).decode("utf-8")
+    # audio_io = BytesIO()
+    # tts.write_to_fp(audio_io)
+    # audio_io.seek(0)
+    # audio_response = audio_io.read()
+
+    # # Encode the audio response as base64 for transmission in JSON
+    # encoded_audio = base64.b64encode(audio_response).decode("utf-8")
     json_response = {
         "response": response,
         "metadata": {"city": city, "date": date},
-        "audio": encoded_audio,
+        # "audio": encoded_audio,
     }
-    await remove(aud_file)
+    # await remove(aud_file)
 
-    return JSONResponse(content=json_response, media_type="application/json")
+    # return JSONResponse(content=json_response, media_type="application/json")
