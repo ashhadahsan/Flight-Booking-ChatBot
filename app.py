@@ -9,11 +9,19 @@ from gtts import gTTS
 from booking_chatbot.chatbot import *
 from user_session.sessions import *
 from constants import *
-from io import BytesIO
 import base64
-from aiofiles.os import remove
 import random
 from booking_chatbot.training import intents
+from utils.utils import (
+    get_city,
+    get_iata,
+    get_date,
+    get_number_of_passengers,
+    get_number_of_passengers_more,
+    get_audio,
+)
+from model.models import current_user
+from dateparser import parse
 
 app = FastAPI()
 
@@ -30,21 +38,30 @@ import uuid
 from fastapi import FastAPI, File, UploadFile
 
 import logging
+import dateparser
+
+import nltk
 
 
 @app.on_event("startup")
 async def startup_event():
     logger = logging.getLogger("uvicorn.access")
+    nltk.download("punkt")
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(handler)
 
 
 @app.post("/create_session/{name}/{location}")
-async def create_session(name: str, location: str, response: Response):
+async def create_session(
+    name: str, location: str, bearer_token: str, response: Response
+):
 
     session = uuid4()
     data = SessionData(username=name, current_location=location)
+    current_user.username = name
+    current_user.origin = get_iata(bearer_token=bearer_token, city=location)
+    print(current_user.username, current_user.origin)
 
     await backend.create(session, data)
     cookie.attach_to_response(response, session)
@@ -69,12 +86,31 @@ async def del_session(response: Response, session_id: UUID = Depends(cookie)):
 from pydub import AudioSegment
 import aiofiles
 
+
+def get_response_pt(response):
+    encoded_audio = get_audio(response)
+    json_response = {
+        "response": response,
+        "metadata": {
+            "username": current_user.username,
+            "origin": current_user.origin,
+            "desrination": current_user.destination,
+            "departure_date": current_user.departure_date,
+            "return_date": current_user.return_date,
+            "num_adults": current_user.num_adults,
+            "child_ages": current_user.child_ages,
+        },
+        "audio": encoded_audio,
+    }
+    return json_response
+
+
 # add mp3 file upload here please
 @app.post("/api/bookingChat")
 async def handle_speech(
     audio: UploadFile = File(...),
-    username: str = Form(...),
-    current_location: str = Form(...),
+    text_input: str = Form(...),
+    bearer_token: str = Form(...),
 ):
     bot = load_chatbot()
     name = str(uuid.uuid1())
@@ -93,35 +129,115 @@ async def handle_speech(
         audio_data = r.record(source)
     text = r.recognize_google(audio_data)
 
-    city = None
-    date = None
+    response, tag = get_response(bot, text_input)
+    if tag == "booking_info_origin":
 
-    # Get a response from Chatterbot
+        current_user.origin = await get_iata(
+            bearer_token=bearer_token, city=get_city(text_input)
+        )
+        response_json = get_response_pt(response=response)
+        del bot
+        return JSONResponse(content=response_json, media_type="application/json")
 
-    response, tag = get_response(bot, text)
+        # response = "Please make sure to speak your Origin of flight, clearly"
+        # response_json = get_response_pt(response=response)
+        # del bot
+        # return JSONResponse(content=response_json, media_type="application/json")
+    elif tag == "greeting":
+        response = response.replace("user", current_user.username)
+        response_json = get_response_pt(response=response)
+        del bot
+        return JSONResponse(content=response_json, media_type="application/json")
+
+    elif tag == "booking_info_desination":
+        try:
+            current_user.destination = get_iata(
+                bearer_token=bearer_token, city=get_city(text)
+            )
+            response_json = get_response_pt(response=response)
+            del bot
+            return JSONResponse(content=response_json, media_type="application/json")
+        except:
+            response = "Please make sure to speak your destination of flight, clearly"
+            response_json = get_response_pt(response=response)
+            del bot
+            return JSONResponse(content=response_json, media_type="application/json")
+
+    elif tag == "booking_dates_leave":
+        try:
+            current_user.departure_date = parse(get_date(text=text))
+            response_json = get_response_pt(response=response)
+            del bot
+            return JSONResponse(content=response_json, media_type="application/json")
+        except:
+            response = "Please make sure to speak your departure date, clearly"
+            response_json = get_response_pt(response=response)
+            del bot
+            return JSONResponse(content=response_json, media_type="application/json")
+    elif tag == "booking_dates_return_yes":
+        try:
+            current_user.return_date = parse(get_date(text=text))
+            response = response.replace("origin", current_user.origin)
+            response = response.replace("destination", current_user.destination)
+            response = response.replace(
+                "traveldate", current_user.departure_date.strftime(r"%Y-%M-%d")
+            )
+            response = response.replace(
+                "backdate", current_user.return_date.strftime(r"%Y-%M-%d")
+            )
+            response_json = get_response_pt(response=response)
+            del bot
+            return JSONResponse(content=response_json, media_type="application/json")
+
+        except:
+            response = "Please make sure to speak your departure date, clearly"
+            response_json = get_response_pt(response=response)
+            del bot
+            return JSONResponse(content=response_json, media_type="application/json")
+    elif tag == "booking_number_of_passengers_alone":  # get number of passeneger
+        current_user.num_adults = get_number_of_passengers(text=text)
+        response_json = get_response_pt(response=response)
+        del bot
+        return JSONResponse(content=response_json, media_type="application/json")
+    elif tag == "booking_number_of_passengers_more":
+
+        (
+            current_user.num_children,
+            current_user.num_adults,
+        ) = get_number_of_passengers_more(text)
+        response_json = get_response_pt(response=response)
+        del bot
+        return JSONResponse(content=response_json, media_type="application/json")
+    elif tag == "booking_bank_details_yes":
+        if "Yes" or "Yeah" in text:
+            if current_user.origin is None:
+                response = "Please make sure to say your Origin of flight"
+                response_json = get_response_pt(response=response)
+                del bot
+                return JSONResponse(
+                    content=response_json, media_type="application/json"
+                )
+            if current_user.destination is None:
+                response = "Please make sure to say your destination of flight"
+                response_json = get_response_pt(response=response)
+                del bot
+                return JSONResponse(
+                    content=response_json, media_type="application/json"
+                )
+            if current_user.departure_date is None:
+                response = "Please make sure to say your departure of flight"
+                response_json = get_response_pt(response=response)
+                del bot
+                return JSONResponse(
+                    content=response_json, media_type="application/json"
+                )
+            if current_user.num_children is None:
+                response = "Please make sure to speak the number of childrens if any"
+                response_json = get_response_pt(response=response)
+                del bot
+                return JSONResponse(
+                    content=response_json, media_type="application/json"
+                )
+    response_json = get_response_pt(response=response)
     del bot
-
-    print(response)
-
-    response = response.replace("user", username)
-
-    # language = "en-us"
-
-    # tts = gTTS(text=response, lang=language, slow=False)
-    # name = str(uuid.uuid1())
-
-    # audio_io = BytesIO()
-    # tts.write_to_fp(audio_io)
-    # audio_io.seek(0)
-    # audio_response = audio_io.read()
-
-    # # Encode the audio response as base64 for transmission in JSON
-    # encoded_audio = base64.b64encode(audio_response).decode("utf-8")
-    json_response = {
-        "response": response,
-        "metadata": {"city": city, "date": date},
-        # "audio": encoded_audio,
-    }
-    # await remove(aud_file)
-
-    # return JSONResponse(content=json_response, media_type="application/json")
+    return JSONResponse(content=response_json, media_type="application/json")

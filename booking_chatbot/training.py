@@ -130,8 +130,13 @@ intents = {
         },
         {
             "tag": "booking_number_of_passengers_alone",
-            "patterns": ["I am travelling alone", "It would only be me."],
-            "responses": ["Perfect.Should I use to current credit card for booking?"],
+            "patterns": [
+                "I am travelling alone",
+                "It would only be me.",
+                "There are four adults",
+                "There are two adults",
+            ],
+            "responses": ["Perfect . Should I use to current credit card for booking?"],
         },
         {
             "tag": "booking_number_of_passengers_more",
@@ -148,7 +153,7 @@ intents = {
             "patterns": [
                 "Yes use my current card",
                 "Yes you can use my current details",
-                "Ye charge my current card",
+                "Yes charge my current card",
             ],
             "responses": ["Perfect. Fetching flights"],
         },

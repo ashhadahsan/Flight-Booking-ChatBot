@@ -10,4 +10,5 @@ aiofiles
 pydub
 pandas
 torch
+word2number 
 nltk

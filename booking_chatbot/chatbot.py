@@ -9,7 +9,7 @@ import torch
 import nltk
 import random
 
-nltk.download("punkt")
+
 from nltk.stem.porter import PorterStemmer
 
 import numpy as np
